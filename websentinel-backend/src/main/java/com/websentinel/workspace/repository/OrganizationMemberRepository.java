@@ -9,5 +9,6 @@ import java.util.UUID;
 
 public interface OrganizationMemberRepository extends JpaRepository<OrganizationMember, UUID> {
     List<OrganizationMember> findByUserId(UUID userId);
+    List<OrganizationMember> findByOrganizationId(UUID organizationId);
     Optional<OrganizationMember> findByOrganizationIdAndUserId(UUID organizationId, UUID userId);
 }
