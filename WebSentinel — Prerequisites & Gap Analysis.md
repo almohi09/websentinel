@@ -223,3 +223,60 @@ A layer-first structure (one giant `controller/`, one giant `service/` package f
 ### Cross-module rule
 
 Every entity that belongs to an organization (websites, scans, findings, etc.) should extend a common base entity carrying `organizationId`, and every repository query touching such an entity must filter by the current request's organization context — this is where tenant isolation (PRD Section 3) actually gets enforced in code, not just assumed at the API layer.
+
+## 10. Frontend Design System, Consistency & Animation Strategy
+
+The Phase 8 frontend plan (tech stack, folder structure, auth flow, page-to-API mapping) is solid for MVP functionality. It does not yet name a single source of truth for visual consistency, or a strategy for animation quality — both needed for a "professional, nothing breaks" frontend as more pages get built by different sessions/people over time.
+
+### 10.1 The missing "single source" — a design tokens file
+
+Right now colors live ad hoc (the severity color table is a good start, but it's the only token set defined). Without one shared source, each new page tends to invent its own shade of blue or spacing value, and the UI drifts.
+
+**Recommendation:** create `src/styles/tokens.js` (or extend `tailwind.config.js` directly) as the one file that defines:
+
+- Color roles (not just severity): `primary`, `neutral` scale, `success`, `warning`, `danger`, `info`, background/surface levels
+- Type scale: a fixed set of sizes/weights (e.g. display, heading, body, caption) — not arbitrary `text-[15px]` one-offs
+- Spacing scale: stick to Tailwind's default scale rather than custom pixel values
+- Motion tokens: durations and easings (e.g. `fast: 150ms`, `base: 250ms`, `ease-out`) so every animation in the app uses the same feel instead of each component picking its own timing
+
+Every component should pull from this file (via Tailwind's `theme()` or imported constants) rather than hardcoding values. This is the actual mechanism that keeps the frontend consistent as it grows — not a convention people remember, but a file that makes the inconsistent version harder to write.
+
+### 10.2 Component variant consistency — `cva` + `tailwind-merge`
+
+With plain Tailwind, a `Button` used in five places tends to grow five slightly different className strings over time. Pairing `class-variance-authority` (cva) with `tailwind-merge` — the pattern shadcn/ui itself uses — defines each shared component's variants once (`variant: primary | secondary | ghost | danger`, `size: sm | md | lg`) so every usage is constrained to the defined set instead of free-form classNames. This is a small addition on top of what the Phase 8 plan already proposes (shadcn/ui was listed as optional — making it the standard, not optional, is the actual consistency mechanism).
+
+### 10.3 Catching breakage before it ships — Storybook
+
+Not in the original plan or the PRD. Storybook lets each shared component (`Button`, `Card`, `Modal`, `Badge`, severity components) be developed and visually checked in isolation, independent of any page. Paired with **Chromatic** (or `@storybook/test-runner` with Playwright) for visual regression, a change to a shared component that accidentally breaks its appearance somewhere else gets caught in CI before merge, rather than being discovered later on a live page. This directly strengthens Gap 9 (frontend testing) from Section 5 — unit tests (Jest/RTL) catch logic breakage, Storybook + visual regression catches visual breakage, and the two together are what "nothing breaks" actually requires.
+
+### 10.4 Animation — professional means restrained, not more
+
+The Phase 8 plan doesn't specify an animation library or principle yet. Two additions:
+
+- **Library:** add **Framer Motion** to the stack for anything beyond simple CSS transitions — it handles orchestration, gesture-driven interaction, and shared-layout transitions (e.g. a finding row expanding into its detail view) far more reliably than hand-rolled CSS, and respects `prefers-reduced-motion` with a single provider setting.
+- **Principle (this is the part most "polished-looking" AI-assisted frontends get backwards):** professional restraint, not fade-and-slide-up on every card and a hover-lift on every button — that scattershot pattern is the single most common tell of a templated, unconsidered UI. Instead:
+- Pick **one orchestrated moment** to spend animation budget on — most naturally the dashboard's first load (stats and findings staggering in once, briefly) or a scan's status transition (pending → running → complete).
+- Everywhere else, motion should answer something the person did: a modal opening, a dropdown expanding, a finding's status changing, a toast confirming an action — motion that shows what changed, not decoration that plays on every render.
+- Severity badges, cards, and list rows should be visually calm by default; let color (already defined in Section 8's design tokens table) and typography carry hierarchy, not motion.
+
+### 10.5 Smaller additions worth doing from day one
+
+| Addition | Why | Effort |
+| --- | --- | --- |
+| ESLint + Prettier + Husky + lint-staged | Auto-formats and lints on commit so style never drifts across sessions/contributors | Low, one-time setup |
+| React Error Boundaries around each route | One broken page/component doesn't crash the whole app | Low |
+| `eslint-plugin-jsx-a11y` + axe DevTools check during Step 9 polish | Matches the PRD's "production-quality practices from the beginning" principle (Section 12) applied to frontend, not just backend | Low |
+| Visible keyboard focus states + color-contrast check on the severity palette | Accessibility floor; red/orange/amber on white needs a contrast check, not just a visual guess | Low |
+| Dark mode — explicitly deferred or explicitly in scope | Not mentioned anywhere in the PRD or the Phase 8 plan; worth a deliberate yes/no now rather than retrofitting tokens later | Decision, not effort |
+
+### 10.6 Net addition to the tech stack table
+
+| Concern | Addition | Why |
+| --- | --- | --- |
+| Animation | Framer Motion | Orchestrated, interruptible, reduced-motion-aware animation |
+| Component variants | class-variance-authority + tailwind-merge | One definition per component variant set, used everywhere |
+| Component isolation/testing | Storybook + Chromatic (or Playwright visual tests) | Catches visual breakage before merge |
+| Code quality | ESLint + Prettier + Husky + lint-staged | Keeps style consistent automatically, not by convention |
+| Accessibility | eslint-plugin-jsx-a11y + axe | Matches backend's security-first rigor on the frontend side |
+
+None of this changes the Phase 8 plan's sequencing — it slots into Step 1 (tokens, ESLint/Prettier, Storybook scaffold) and Step 4/5 (cva-based components, Framer Motion on the dashboard and modals) without adding new phases.
