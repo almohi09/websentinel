@@ -133,8 +133,8 @@ export default function Websites() {
   return (
     <div className="space-y-6">
       {/* Fleet Command Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#1E2D4A] pb-5">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#1E2D4A] pb-5">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2 w-2 rounded-full bg-[#64FFDA] animate-pulse"></span>
             <span className="text-xs font-mono uppercase tracking-widest text-[#64FFDA]">Perimeter Assets</span>
@@ -143,20 +143,20 @@ export default function Websites() {
             Target Fleet
           </h1>
           <p className="text-sm text-[#8892B0] mt-1">
-            Registered endpoints, verification protocols, and passive scanner targets.
+            Registered endpoints, verification protocols, and continuous monitoring targets.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 self-start lg:self-auto">
           {orgs.length > 1 && (
-            <div className="relative">
+            <div className="relative shrink-0">
               <select
-                className="h-10 px-3 pr-8 rounded-lg border border-[#1E2D4A] bg-[#112240] text-sm text-[#CCD6F6] font-mono focus:outline-none focus:border-[#64FFDA]"
+                className="h-10 px-3 pr-8 rounded-lg border border-[#1E2D4A] bg-[#112240] text-xs font-mono text-[#CCD6F6] focus:outline-none focus:border-[#64FFDA] cursor-pointer hover:border-[#64FFDA]/50 transition-colors whitespace-nowrap"
                 value={orgId}
                 onChange={(e) => setOrgId(e.target.value)}
               >
                 {orgs.map((o) => (
-                  <option key={o.id} value={o.id}>
+                  <option key={o.id} value={o.id} className="bg-[#112240] text-[#CCD6F6]">
                     Fleet: {o.name}
                   </option>
                 ))}
@@ -166,7 +166,7 @@ export default function Websites() {
 
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="h-10 bg-[#64FFDA] text-[#0A192F] hover:bg-[#64FFDA]/90 font-mono text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(100,255,218,0.2)]">
+              <Button className="h-10 px-4 bg-[#64FFDA] text-[#0A192F] hover:bg-[#64FFDA]/90 font-mono text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(100,255,218,0.2)] shrink-0">
                 <Plus className="h-4 w-4 mr-1.5" />
                 Register Target
               </Button>
@@ -361,7 +361,7 @@ export default function Websites() {
                   onClick={() => navigate(`/websites/${w.id}`)}
                   className="group relative rounded-xl border border-[#1E2D4A] bg-[#112240] p-4.5 hover:border-[#64FFDA]/50 hover:shadow-[0_4px_25px_rgba(0,0,0,0.3)] transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
                     <div className={`h-11 w-11 rounded-lg border flex items-center justify-center shrink-0 ${
                       w.verified
                         ? 'border-[#64FFDA]/30 bg-[#64FFDA]/10 text-[#64FFDA]'
@@ -370,9 +370,9 @@ export default function Websites() {
                       {w.verified ? <ShieldCheck className="h-6 w-6" /> : <ShieldAlert className="h-6 w-6" />}
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-base font-bold text-white group-hover:text-[#64FFDA] transition-colors">
+                        <span className="font-mono text-base font-bold text-white group-hover:text-[#64FFDA] transition-colors break-all">
                           {w.url}
                         </span>
                         <button
