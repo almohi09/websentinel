@@ -276,14 +276,14 @@ export default function WebsiteDetail() {
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Target Fleet
         </button>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1E2D4A] pb-5">
-          <div className="space-y-1">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#1E2D4A] pb-5">
+          <div className="space-y-1.5 min-w-0 flex-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl sm:text-3xl font-mono font-black text-white break-all flex items-center gap-2">
                 <Globe className="h-6 w-6 text-[#64FFDA] shrink-0" />
-                {website.url}
+                <span>{website.url}</span>
               </h1>
-              <span className={`inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-0.5 rounded-full border ${
+              <span className={`inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-0.5 rounded-full border shrink-0 ${
                 website.verified
                   ? 'border-[#64FFDA]/40 bg-[#64FFDA]/10 text-[#64FFDA]'
                   : 'border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#F59E0B]'
@@ -297,42 +297,47 @@ export default function WebsiteDetail() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {website.verified && (
-              <>
-                <Button
+          {website.verified && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 self-start lg:self-center">
+              <div className="inline-flex items-center rounded-lg p-1 bg-[#071324] border border-[#1E2D4A] shadow-inner gap-1">
+                <button
+                  type="button"
                   onClick={() => startScan('PASSIVE')}
                   disabled={scanning}
-                  className="bg-[#112240] border border-[#1E2D4A] hover:border-[#64FFDA] text-[#CCD6F6] hover:text-[#64FFDA] font-mono text-xs font-semibold uppercase tracking-wider transition-all"
+                  className="px-3.5 py-2 rounded-md font-mono text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer bg-[#112240] text-[#CCD6F6] hover:text-[#64FFDA] hover:border-[#64FFDA]/40 border border-transparent disabled:opacity-50"
+                  title="Non-intrusive baseline scan: TLS handshake, HTTP security headers, and cookie flags"
                 >
                   {scanning ? (
-                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Play className="h-3.5 w-3.5 mr-1.5 fill-current text-[#64FFDA]" />
+                    <Play className="h-3.5 w-3.5 fill-current text-[#64FFDA]" />
                   )}
-                  Passive Scan
-                </Button>
+                  <span>Passive Scan</span>
+                </button>
 
-                <Button
+                <button
+                  type="button"
                   onClick={() => startScan('ACTIVE')}
                   disabled={scanning}
-                  className="bg-[#64FFDA] text-[#0A192F] hover:bg-[#64FFDA]/90 font-mono text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(100,255,218,0.25)] transition-all"
+                  className="px-4 py-2 rounded-md font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer bg-[#64FFDA] text-[#0A192F] hover:bg-[#64FFDA]/90 shadow-[0_0_15px_rgba(100,255,218,0.25)] border border-[#64FFDA] disabled:opacity-50"
+                  title="Comprehensive audit: Passive baseline + active probes for exposed .env, .git, CORS, and HTTP methods"
                 >
                   {scanning ? (
                     <>
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                      Auditing Probes...
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>Auditing...</span>
                     </>
                   ) : (
                     <>
-                      <Zap className="h-3.5 w-3.5 mr-1.5 fill-current" />
-                      ⚡ Active Probes (Phase 7)
+                      <Zap className="h-3.5 w-3.5 fill-current" />
+                      <span>Active Probes</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-[#0A192F]/20 font-mono">P7</span>
                     </>
                   )}
-                </Button>
-              </>
-            )}
-          </div>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
