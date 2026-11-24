@@ -52,3 +52,5 @@ mvn clean verify
 
 Scaffold only. Modules (auth, workspace, website, scanner, finding, ...) are to be implemented phase by phase per PRD §9.
 Active scanning stays disabled until safety controls pass (see docs/threat-model.md).
+
+to verify website : run in the project path->   docker exec -i websentinel-postgres-1 psql -U websentinel -d websentinel_dev -c "UPDATE websites SET verified = true, verified_at = NOW();"
