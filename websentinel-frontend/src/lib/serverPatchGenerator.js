@@ -13,6 +13,10 @@ export const SUPPORTED_SERVERS = [
 
 function identifyVulnerabilityType(title = '', desc = '') {
   const t = (title + ' ' + desc).toLowerCase()
+  if (t.includes('.env') || t.includes('.git') || t.includes('dotfile') || t.includes('repository metadata') || t.includes('secrets file') || t.includes('.ds_store')) return 'DOTFILES'
+  if (t.includes('cors') || t.includes('origin reflection') || t.includes('access-control-allow')) return 'CORS'
+  if (t.includes('trace') || t.includes('http method') || t.includes('put/delete')) return 'HTTP_METHODS'
+  if (t.includes('actuator') || t.includes('swagger') || t.includes('phpinfo') || t.includes('server-status')) return 'DIAGNOSTIC_EXPOSURE'
   if (t.includes('hsts') || t.includes('strict-transport-security')) return 'HSTS'
   if (t.includes('content-security-policy') || t.includes('csp')) return 'CSP'
   if (t.includes('x-frame-options') || t.includes('clickjacking') || t.includes('frame-ancestors')) return 'FRAME_OPTIONS'
@@ -30,6 +34,14 @@ export function generateServerPatch(finding, serverType = 'nginx') {
   const targetHost = finding?.host || 'yourdomain.com'
 
   switch (vuln) {
+    case 'DOTFILES':
+      return generateDotfilesPatch(serverType, targetHost)
+    case 'CORS':
+      return generateCorsPatch(serverType, targetHost)
+    case 'HTTP_METHODS':
+      return generateHttpMethodsPatch(serverType, targetHost)
+    case 'DIAGNOSTIC_EXPOSURE':
+      return generateDiagnosticPatch(serverType, targetHost)
     case 'HSTS':
       return generateHstsPatch(serverType, targetHost)
     case 'CSP':
@@ -561,7 +573,169 @@ SSLHonorCipherOrder on`,
   }
 }
 
-// 10. Generic Security Patch
+// 10. Dotfiles & Sensitive Files Protection (.env, .git, .DS_Store)
+function generateDotfilesPatch(server, host) {
+  if (server === 'nginx') {
+    return {
+      server: 'Nginx',
+      filePath: '/etc/nginx/conf.d/block_dotfiles.conf',
+      title: 'Nginx Dotfile & Secrets Lockdown',
+      code: `# Deny access to hidden files (.env, .git, etc.) except ACME challenge
+location ~ /\\.(?!well-known).* {
+    deny all;
+    access_log off;
+    log_not_found off;
+    return 404;
+}`,
+      reloadCommand: 'sudo nginx -t && sudo systemctl reload nginx',
+      verifyCommand: `curl -sI https://${host}/.env | grep -E "HTTP/.* (404|403)"`,
+      explanation: 'Prevents public download of .env environment credentials, git repositories, and OS metadata.'
+    }
+  }
+  if (server === 'apache') {
+    return {
+      server: 'Apache',
+      filePath: '.htaccess or /etc/apache2/conf-available/block_dotfiles.conf',
+      title: 'Apache Dotfile Protection',
+      code: `# Block all dotfiles (.env, .git, .ht*)
+<FilesMatch "^\\.">
+    Require all denied
+</FilesMatch>`,
+      reloadCommand: 'sudo systemctl reload apache2',
+      verifyCommand: `curl -sI https://${host}/.env | grep -E "HTTP/.* (404|403)"`,
+      explanation: 'Blocks Apache from serving dotfiles or sensitive configuration files.'
+    }
+  }
+  if (server === 'cloudflare') {
+    return {
+      server: 'Cloudflare',
+      filePath: 'Cloudflare Dashboard > Security > WAF > Custom Rules',
+      title: 'Cloudflare WAF Dotfile & Git Blocker',
+      code: `Rule Name: "Block Sensitive Dotfiles & Git"
+Filter Expression:
+(http.request.uri.path contains "/.env" or http.request.uri.path contains "/.git" or http.request.uri.path contains "/.DS_Store")
+Action: Block (403 Forbidden)`,
+      reloadCommand: 'Rule deploys globally across Cloudflare edge within 5 seconds.',
+      verifyCommand: `curl -sI https://${host}/.env`,
+      explanation: 'Edge-blocks malicious probes for credentials before reaching your origin.'
+    }
+  }
+  if (server === 'nextjs') {
+    return {
+      server: 'Next.js',
+      filePath: 'middleware.ts',
+      title: 'Next.js Middleware Dotfile Blocker',
+      code: `import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  if (pathname.includes('/.') && !pathname.includes('/.well-known')) {
+    return new NextResponse('Access Denied', { status: 404 })
+  }
+  return NextResponse.next()
+}`,
+      reloadCommand: 'npm run build',
+      verifyCommand: `curl -sI https://${host}/.env`,
+      explanation: 'Rejects requests targeting hidden dotfiles before routing.'
+    }
+  }
+  return {
+    server: 'Caddy',
+    filePath: 'Caddyfile',
+    title: 'Caddy 2 Dotfiles Guard',
+    code: `@dotfiles path */.*
+error @dotfiles 404`,
+    reloadCommand: 'caddy reload',
+    verifyCommand: `curl -sI https://${host}/.env`,
+    explanation: 'Instructs Caddy to return 404 for any path containing dotfiles.'
+  }
+}
+
+// 11. CORS Misconfiguration Remediation
+function generateCorsPatch(server, host) {
+  if (server === 'nginx') {
+    return {
+      server: 'Nginx',
+      filePath: '/etc/nginx/conf.d/cors.conf',
+      title: 'Nginx Strict CORS Whitelist',
+      code: `# Whitelist specific trusted origins instead of reflecting unverified Origin headers
+map $http_origin $cors_origin {
+    default "";
+    "~^https://(www\\.)?${host.replace('.', '\\.')}$" "$http_origin";
+    "~^https://app\\.${host.replace('.', '\\.')}$" "$http_origin";
+}
+
+add_header Access-Control-Allow-Origin $cors_origin always;
+add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE" always;
+add_header Access-Control-Allow-Headers "Authorization, Content-Type, Accept" always;
+add_header Access-Control-Allow-Credentials "true" always;`,
+      reloadCommand: 'sudo nginx -t && sudo systemctl reload nginx',
+      verifyCommand: `curl -sI -H "Origin: https://evil-attacker.com" https://${host} | grep -i "access-control-allow-origin"`,
+      explanation: 'Ensures Access-Control-Allow-Origin is never wild-carded or reflected for untrusted third-party origins.'
+    }
+  }
+  return {
+    server: 'Apache',
+    filePath: '.htaccess',
+    title: 'Apache Origin Validation',
+    code: `# Restrict Access-Control-Allow-Origin to trusted domains
+SetEnvIf Origin "^https://(www\\.)?${host.replace('.', '\\.')}$" CORS_ORIGIN=$0
+Header set Access-Control-Allow-Origin "%{CORS_ORIGIN}e" env=CORS_ORIGIN
+Header set Access-Control-Allow-Credentials "true" env=CORS_ORIGIN`,
+    reloadCommand: 'sudo systemctl reload apache2',
+    verifyCommand: `curl -sI -H "Origin: https://evil.com" https://${host}`,
+    explanation: 'Validates origin domain before setting CORS response headers.'
+  }
+}
+
+// 12. HTTP Methods Hardening (Disable TRACE/TRACK)
+function generateHttpMethodsPatch(server, host) {
+  if (server === 'apache') {
+    return {
+      server: 'Apache',
+      filePath: '/etc/apache2/conf-available/security.conf',
+      title: 'Apache Disable TRACE / XST Attack Vector',
+      code: `# Mitigate Cross-Site Tracing (XST)
+TraceEnable off`,
+      reloadCommand: 'sudo systemctl reload apache2',
+      verifyCommand: `curl -sI -X TRACE https://${host} | grep -E "HTTP/.* (405|403|501)"`,
+      explanation: 'Disables Apache TRACE method to prevent stealing HttpOnly session cookies.'
+    }
+  }
+  return {
+    server: 'Nginx',
+    filePath: '/etc/nginx/conf.d/methods.conf',
+    title: 'Nginx Restrict HTTP Methods',
+    code: `# Block dangerous methods like TRACE / TRACK
+if ($request_method ~ ^(TRACE|TRACK)$ ) {
+    return 405;
+}`,
+    reloadCommand: 'sudo nginx -t && sudo systemctl reload nginx',
+    verifyCommand: `curl -sI -X TRACE https://${host} | grep -E "HTTP/.* (405|403|501)"`,
+    explanation: 'Returns 405 Method Not Allowed for TRACE and TRACK requests.'
+  }
+}
+
+// 13. Diagnostic & Admin Endpoints Lockdown
+function generateDiagnosticPatch(server, host) {
+  return {
+    server: server.toUpperCase(),
+    filePath: server === 'nginx' ? '/etc/nginx/conf.d/protect_diagnostics.conf' : '.htaccess',
+    title: 'Diagnostic & Internal Endpoints Lockdown',
+    code: `# Restrict internal diagnostic paths (/actuator, /swagger, /server-status, /phpinfo.php)
+location ~ ^/(actuator|swagger-ui|v3/api-docs|server-status|phpinfo\\.php) {
+    allow 127.0.0.1;
+    allow 10.0.0.0/8;
+    deny all;
+}`,
+    reloadCommand: server === 'nginx' ? 'sudo nginx -t && sudo systemctl reload nginx' : 'sudo systemctl reload apache2',
+    verifyCommand: `curl -sI https://${host}/actuator/health | grep -E "HTTP/.* (404|403)"`,
+    explanation: 'Restricts sensitive monitoring and diagnostic interfaces to private internal networks.'
+  }
+}
+
+// 14. Generic Security Patch
 function generateGenericSecurityPatch(server, finding, host) {
   return {
     server: server.toUpperCase(),

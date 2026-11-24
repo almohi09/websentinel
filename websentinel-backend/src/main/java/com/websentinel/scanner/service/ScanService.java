@@ -43,6 +43,10 @@ public class ScanService {
     }
 
     public Scan startScan(UUID websiteId, UUID userId) {
+        return startScan(websiteId, "PASSIVE", userId);
+    }
+
+    public Scan startScan(UUID websiteId, String scanType, UUID userId) {
         Website website = websiteRepository.findById(websiteId)
             .orElseThrow(() -> new ResourceNotFoundException("Website not found: " + websiteId));
         requireMembership(website.getOrganizationId(), userId);
@@ -55,10 +59,12 @@ public class ScanService {
                 "Website must be verified before scanning");
         }
 
+        String normalizedType = (scanType != null && scanType.equalsIgnoreCase("ACTIVE")) ? "ACTIVE" : "PASSIVE";
+
         Scan scan = new Scan();
         scan.setOrganizationId(website.getOrganizationId());
         scan.setWebsiteId(websiteId);
-        scan.setScanType("PASSIVE");
+        scan.setScanType(normalizedType);
         scan.setStatus("PENDING");
         scanRepository.save(scan);
 

@@ -25,8 +25,9 @@ public class ScannerController {
     }
 
     @PostMapping("/api/websites/{websiteId}/scans")
-    public ScanResponse startScan(@PathVariable UUID websiteId) {
-        return toResponse(scanService.startScan(websiteId, currentUserId()));
+    public ScanResponse startScan(@PathVariable UUID websiteId,
+                                  @RequestParam(value = "type", required = false, defaultValue = "PASSIVE") String type) {
+        return toResponse(scanService.startScan(websiteId, type, currentUserId()));
     }
 
     @GetMapping("/api/scans/{scanId}")

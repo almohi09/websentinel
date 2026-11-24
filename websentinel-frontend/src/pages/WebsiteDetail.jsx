@@ -26,7 +26,8 @@ import {
   FileDown,
   Lock,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Zap
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { generateSecurityReportPdf } from '../lib/pdfReportGenerator'
@@ -200,11 +201,15 @@ export default function WebsiteDetail() {
     }
   }
 
-  const startScan = async () => {
+  const startScan = async (type = 'PASSIVE') => {
     setScanning(true)
     try {
-      const res = await api.post(`/websites/${id}/scans`)
-      toast.success('Passive vulnerability scan initiated')
+      const res = await api.post(`/websites/${id}/scans?type=${type}`)
+      toast.success(
+        type === 'ACTIVE' 
+          ? '⚡ Controlled Active Probe scan initiated (Phase 7)' 
+          : '🔍 Passive vulnerability scan initiated'
+      )
       navigate(`/scans/${res.data.id}`)
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to start scan')
@@ -292,25 +297,40 @@ export default function WebsiteDetail() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             {website.verified && (
-              <Button
-                onClick={startScan}
-                disabled={scanning}
-                className="bg-[#64FFDA] text-[#0A192F] hover:bg-[#64FFDA]/90 font-mono text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(100,255,218,0.2)]"
-              >
-                {scanning ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Initializing Probes...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-1.5 fill-current" />
-                    Launch Passive Scan
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  onClick={() => startScan('PASSIVE')}
+                  disabled={scanning}
+                  className="bg-[#112240] border border-[#1E2D4A] hover:border-[#64FFDA] text-[#CCD6F6] hover:text-[#64FFDA] font-mono text-xs font-semibold uppercase tracking-wider transition-all"
+                >
+                  {scanning ? (
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5 mr-1.5 fill-current text-[#64FFDA]" />
+                  )}
+                  Passive Scan
+                </Button>
+
+                <Button
+                  onClick={() => startScan('ACTIVE')}
+                  disabled={scanning}
+                  className="bg-[#64FFDA] text-[#0A192F] hover:bg-[#64FFDA]/90 font-mono text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(100,255,218,0.25)] transition-all"
+                >
+                  {scanning ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      Auditing Probes...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-3.5 w-3.5 mr-1.5 fill-current" />
+                      ⚡ Active Probes (Phase 7)
+                    </>
+                  )}
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -707,7 +727,13 @@ export default function WebsiteDetail() {
                         </span>
                       </div>
                       <div className="text-[11px] font-mono text-[#8892B0] flex items-center gap-2">
-                        <span>Type: {s.scanType || 'PASSIVE'}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+                          s.scanType === 'ACTIVE'
+                            ? 'bg-[#64FFDA]/15 text-[#64FFDA] border border-[#64FFDA]/30'
+                            : 'bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/30'
+                        }`}>
+                          {s.scanType === 'ACTIVE' ? '⚡ ACTIVE' : '🔍 PASSIVE'}
+                        </span>
                         <span>•</span>
                         <span>Started: {s.startedAt ? new Date(s.startedAt).toLocaleTimeString() : 'N/A'}</span>
                         {s.completedAt && (

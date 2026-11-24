@@ -298,10 +298,15 @@ export default function ScanDetail() {
                   <span className="text-xs px-2 py-0.5 rounded bg-[#64FFDA]/10 text-[#64FFDA] font-mono">LIVE</span>
                 </h3>
                 <p className="text-xs text-[#8892B0] font-mono">
-                  WebSentinel passive scanner is conducting non-destructive audits: HTTP Armor headers, TLS handshake suites, Cookie isolation flags, and DNS rebinding protections. Polling every 2.0s.
+                  {scan.scanType === 'ACTIVE'
+                    ? 'WebSentinel controlled active scanner is executing safe endpoint probes: exposed dotfiles (.env, .git), CORS origin reflections, HTTP method audits, and administrative diagnostics. Polling every 2.0s.'
+                    : 'WebSentinel passive scanner is conducting non-destructive audits: HTTP Armor headers, TLS handshake suites, Cookie isolation flags, and DNS rebinding protections. Polling every 2.0s.'}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-                  {['DNS Validation', 'TLS Certificate', 'Header Armor', 'Cookie Flags'].map((step, idx) => (
+                  {(scan.scanType === 'ACTIVE' 
+                    ? ['Passive Baseline', 'HTTP Methods', 'CORS Whitelist', 'Exposed Secrets']
+                    : ['DNS Validation', 'TLS Certificate', 'Header Armor', 'Cookie Flags']
+                  ).map((step, idx) => (
                     <div key={step} className="p-2 rounded bg-[#0A192F] border border-[#1E2D4A] text-center">
                       <div className="text-[10px] font-mono text-[#64FFDA]">STEP 0{idx + 1}</div>
                       <div className="text-xs font-mono text-[#CCD6F6]">{step}</div>

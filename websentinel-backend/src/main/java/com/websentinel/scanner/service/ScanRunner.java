@@ -1,6 +1,5 @@
 package com.websentinel.scanner.service;
 
-import com.websentinel.common.entity.BaseOrgEntity;
 import com.websentinel.common.util.TenantContext;
 import com.websentinel.scanner.entity.Scan;
 import com.websentinel.scanner.entity.ScanFinding;
@@ -12,6 +11,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,15 +22,18 @@ public class ScanRunner {
     private final ScanFindingRepository findingRepository;
     private final WebsiteRepository websiteRepository;
     private final PassiveScannerService passiveScanner;
+    private final ActiveScannerService activeScanner;
 
     public ScanRunner(ScanRepository scanRepository,
                       ScanFindingRepository findingRepository,
                       WebsiteRepository websiteRepository,
-                      PassiveScannerService passiveScanner) {
+                      PassiveScannerService passiveScanner,
+                      ActiveScannerService activeScanner) {
         this.scanRepository = scanRepository;
         this.findingRepository = findingRepository;
         this.websiteRepository = websiteRepository;
         this.passiveScanner = passiveScanner;
+        this.activeScanner = activeScanner;
     }
 
     @Async
@@ -45,7 +48,12 @@ public class ScanRunner {
             scan.setStartedAt(Instant.now());
             scanRepository.save(scan);
 
-            List<PassiveScannerService.FindingDraft> drafts = passiveScanner.scan(website);
+            List<PassiveScannerService.FindingDraft> drafts = new ArrayList<>(passiveScanner.scan(website));
+
+            // If scan type is ACTIVE, also run the controlled active scanner checks
+            if ("ACTIVE".equalsIgnoreCase(scan.getScanType())) {
+                drafts.addAll(activeScanner.scan(website));
+            }
 
             for (PassiveScannerService.FindingDraft d : drafts) {
                 ScanFinding f = new ScanFinding();
