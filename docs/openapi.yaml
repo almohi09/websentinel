@@ -1,0 +1,361 @@
+openapi: 3.0.3
+info:
+  title: WebSentinel API
+  version: 0.0.1
+  description: Multi-tenant website security assessment platform
+
+servers:
+  - url: http://localhost:8080
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        fullName: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    AuthResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        userId: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        fullName: { type: string }
+        emailVerified: { type: boolean }
+    Organization:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        type: { type: string, enum: [personal, company, client] }
+    Website:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string }
+        host: { type: string }
+        verified: { type: boolean }
+    Scan:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        websiteId: { type: string, format: uuid }
+        scanType: { type: string, enum: [PASSIVE, ACTIVE] }
+        status: { type: string, enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED] }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+    Finding:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        severity: { type: string, enum: [CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL] }
+        status: { type: string, enum: [OPEN, IN_PROGRESS, RESOLVED, ACCEPTED_RISK] }
+        remediation: { type: string }
+    Error:
+      type: object
+      properties:
+        timestamp: { type: string }
+        status: { type: integer }
+        error: { type: string }
+        message: { type: string }
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201': { description: Created }
+        '400': { description: Validation error, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Authenticate and issue tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        '401': { description: Unauthorized }
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate session/tokens
+      responses:
+        '204': { description: No content }
+  /api/auth/verify-email:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Confirm email verification token
+      responses:
+        '200': { description: OK }
+  /api/auth/forgot-password:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Request password reset
+      responses:
+        '200': { description: OK }
+  /api/auth/reset-password:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Reset password with token
+      responses:
+        '200': { description: OK }
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+    put:
+      tags: [Users]
+      summary: Update current user profile
+      responses:
+        '200': { description: OK }
+  /api/organizations:
+    post:
+      tags: [Workspace]
+      summary: Create a new organization/workspace
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Organization' } } } }
+    get:
+      tags: [Workspace]
+      summary: List organizations the user belongs to
+      responses:
+        '200': { description: OK }
+  /api/organizations/{orgId}:
+    get:
+      tags: [Workspace]
+      summary: Get organization details
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+    put:
+      tags: [Workspace]
+      summary: Update organization details
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+  /api/organizations/{orgId}/invite:
+    post:
+      tags: [Workspace]
+      summary: Invite a member
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '201': { description: Created }
+  /api/organizations/{orgId}/members:
+    get:
+      tags: [Workspace]
+      summary: List members
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+  /api/organizations/{orgId}/members/{memberId}:
+    put:
+      tags: [Workspace]
+      summary: Update a member's role
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Workspace]
+      summary: Remove a member
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: No content }
+  /api/organizations/{orgId}/websites:
+    post:
+      tags: [Websites]
+      summary: Add a website to an organization
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Website' } } } }
+    get:
+      tags: [Websites]
+      summary: List an organization's websites
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+  /api/websites/{websiteId}:
+    get:
+      tags: [Websites]
+      summary: Get website details
+      parameters:
+        - name: websiteId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Websites]
+      summary: Remove a website
+      parameters:
+        - name: websiteId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: No content }
+  /api/websites/{websiteId}/verify:
+    post:
+      tags: [Websites]
+      summary: Trigger ownership verification
+      parameters:
+        - name: websiteId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+  /api/websites/{websiteId}/scans:
+    get:
+      tags: [Websites]
+      summary: List scan history for a website
+      parameters:
+        - name: websiteId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+  /api/websites/{websiteId}/scans:
+    post:
+      tags: [Scanner]
+      summary: Start a new scan
+      parameters:
+        - name: websiteId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '202': { description: Accepted }
+  /api/scans/{scanId}:
+    get:
+      tags: [Scanner]
+      summary: Get scan details and results
+      parameters:
+        - name: scanId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Scan' } } } }
+  /api/scans/{scanId}/status:
+    get:
+      tags: [Scanner]
+      summary: Get scan execution status
+      parameters:
+        - name: scanId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+  /api/scans/{scanId}/findings:
+    get:
+      tags: [Findings]
+      summary: List findings for a scan
+      parameters:
+        - name: scanId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }
+  /api/findings/{findingId}:
+    get:
+      tags: [Findings]
+      summary: Get a single finding's details
+      parameters:
+        - name: findingId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Finding' } } } }
+  /api/findings/{findingId}/status:
+    put:
+      tags: [Findings]
+      summary: Update a finding's status
+      parameters:
+        - name: findingId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: OK }

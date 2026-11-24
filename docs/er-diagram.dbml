@@ -1,0 +1,174 @@
+// WebSentinel — ER Diagram (MVP Core Entities)
+// Tool: https://dbdiagram.io  (paste this DBML to render)
+// Companion to WebSentinel-PRD.md §7 and Gap Analysis §7
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) [not null]
+  full_name varchar(255)
+  email_verified boolean [default: false]
+  tos_accepted_at timestamp
+  tos_version varchar(20)
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table organizations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(255) [not null]
+  type varchar(50) [not null, note: 'personal | company | client']
+  owner_id uuid [not null, ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+}
+
+Table organization_members {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  user_id uuid [not null, ref: > users.id]
+  role varchar(20) [not null, note: 'OWNER | ADMIN | MEMBER | VIEWER']
+  invited_at timestamp [default: `now()`]
+  joined_at timestamp
+
+  Indexes {
+    (organization_id, user_id) [unique]
+  }
+}
+
+Table websites {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  url varchar(2048) [not null]
+  host varchar(255) [not null]
+  verification_method varchar(20) [note: 'DNS_TXT | HTML_FILE | META_TAG']
+  verified boolean [default: false]
+  verified_at timestamp
+  authorization_attested_at timestamp
+  authorization_attested_ip varchar(45)
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  deleted_at timestamp
+
+  Indexes {
+    organization_id
+    host
+  }
+}
+
+Table scans {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  website_id uuid [not null, ref: > websites.id]
+  scan_type varchar(20) [not null, note: 'PASSIVE | ACTIVE']
+  status varchar(20) [not null, note: 'PENDING | RUNNING | COMPLETED | FAILED | CANCELLED']
+  started_at timestamp
+  completed_at timestamp
+  error_message text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    organization_id
+    website_id
+    (website_id, created_at)
+  }
+}
+
+Table scan_findings {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  scan_id uuid [not null, ref: > scans.id]
+  website_id uuid [not null, ref: > websites.id]
+  title varchar(255) [not null]
+  description text
+  severity varchar(20) [not null, note: 'CRITICAL | HIGH | MEDIUM | LOW | INFORMATIONAL']
+  evidence text
+  remediation text
+  status varchar(20) [not null, default: 'OPEN', note: 'OPEN | IN_PROGRESS | RESOLVED | ACCEPTED_RISK']
+  detected_at timestamp [default: `now()`]
+  resolved_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    organization_id
+    scan_id
+    (website_id, severity)
+  }
+}
+
+Table plans {
+  id uuid [pk, default: `gen_random_uuid()`]
+  code varchar(50) [unique, not null, note: 'FREE | STARTER | PROFESSIONAL | BUSINESS']
+  name varchar(100) [not null]
+  website_limit int [not null]
+  scan_quota_monthly int [not null]
+  price_inr int [not null]
+  active boolean [default: true]
+  created_at timestamp [default: `now()`]
+}
+
+Table subscriptions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  plan_id uuid [not null, ref: > plans.id]
+  status varchar(20) [not null, note: 'ACTIVE | CANCELLED | EXPIRED | PAST_DUE']
+  current_period_start timestamp
+  current_period_end timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Indexes {
+    organization_id
+  }
+}
+
+Table payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  subscription_id uuid [ref: > subscriptions.id]
+  amount_inr int [not null]
+  currency varchar(10) [default: 'INR']
+  status varchar(20) [not null]
+  gateway varchar(20) [note: 'RAZORPAY | STRIPE']
+  gateway_payment_id varchar(255)
+  created_at timestamp [default: `now()`]
+
+  Indexes {
+    organization_id
+  }
+}
+
+Table notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  user_id uuid [ref: > users.id]
+  type varchar(50) [not null]
+  title varchar(255) [not null]
+  message text
+  read boolean [default: false]
+  created_at timestamp [default: `now()`]
+
+  Indexes {
+    (user_id, read)
+  }
+}
+
+Table audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [ref: > organizations.id]
+  user_id uuid [ref: > users.id]
+  action varchar(100) [not null]
+  resource_type varchar(50)
+  resource_id uuid
+  ip_address varchar(45)
+  user_agent text
+  created_at timestamp [default: `now()`]
+
+  Indexes {
+    (organization_id, created_at)
+    (user_id, created_at)
+  }
+}

@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/websentinel_dev
+    username: websentinel
+    password: websentinel
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  mail:
+    host: localhost
+    port: 1025
+
+logging:
+  level:
+    com.websentinel: DEBUG
+    org.springframework.security: INFO
+
+websentinel:
+  jwt:
+    secret: dev-only-secret-not-for-prod-please-change
+    expiration-ms: 86400000
