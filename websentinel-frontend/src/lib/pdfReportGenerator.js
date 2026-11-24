@@ -149,7 +149,8 @@ export function generateSecurityReportPdf({ scan, website, findings = [] }) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(204, 214, 246)
-  doc.text(`TARGET HOST: ${targetUrl}`, margin + 6, y + 25)
+  const displayTarget = targetUrl.length > 52 ? targetUrl.substring(0, 50) + '...' : targetUrl
+  doc.text(`TARGET HOST: ${displayTarget}`, margin + 6, y + 25)
   doc.text(`SCAN ID: ${scan?.id || 'MANUAL-REF'}`, margin + 6, y + 30)
 
   doc.text(`AUDIT DATE: ${scanDate}`, margin + 110, y + 25)
@@ -296,18 +297,30 @@ export function generateSecurityReportPdf({ scan, website, findings = [] }) {
 
       // Finding Header
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(8)
+      doc.setFontSize(7.5)
       doc.setTextColor(...sevColor)
-      doc.text(`[${finding.severity}]`, margin + 6, y + 6)
+      const badgeText = `[${finding.severity}]`
+      const badgeW = doc.getTextWidth(badgeText)
+      doc.text(badgeText, margin + 6, y + 6)
 
-      doc.setFontSize(9)
+      // Finding Title (dynamically positioned after severity badge to prevent overlap)
+      const titleStartX = margin + 6 + badgeW + 3.5
+      const statusText = `STATUS: ${finding.status || 'OPEN'}`
+      doc.setFontSize(7)
+      const statusW = doc.getTextWidth(statusText)
+      const maxTitleW = (pageWidth - margin - 4 - statusW - 4) - titleStartX
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8.5)
       doc.setTextColor(255, 255, 255)
-      doc.text(finding.title || 'Untitled Finding', margin + 28, y + 6)
+      const titleLines = doc.splitTextToSize(finding.title || 'Untitled Finding', Math.max(maxTitleW, 40))
+      doc.text(titleLines[0], titleStartX, y + 6)
 
       // Finding Status Tag
+      doc.setFont('helvetica', 'bold')
       doc.setFontSize(7)
       doc.setTextColor(136, 146, 176)
-      doc.text(`STATUS: ${finding.status || 'OPEN'}`, pageWidth - margin - 4, y + 6, { align: 'right' })
+      doc.text(statusText, pageWidth - margin - 4, y + 6, { align: 'right' })
 
       let internalY = y + 11
 
