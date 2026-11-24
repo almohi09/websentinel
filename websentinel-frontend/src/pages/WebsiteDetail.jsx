@@ -207,8 +207,8 @@ export default function WebsiteDetail() {
       const res = await api.post(`/websites/${id}/scans?type=${type}`)
       toast.success(
         type === 'ACTIVE' 
-          ? '⚡ Controlled Active Probe scan initiated (Phase 7)' 
-          : '🔍 Passive vulnerability scan initiated'
+          ? '⚡ Active security vulnerability scan initiated' 
+          : '🔍 Passive security vulnerability scan initiated'
       )
       navigate(`/scans/${res.data.id}`)
     } catch (e) {
@@ -331,7 +331,6 @@ export default function WebsiteDetail() {
                     <>
                       <Zap className="h-3.5 w-3.5 fill-current" />
                       <span>Active Probes</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-[#0A192F]/20 font-mono">P7</span>
                     </>
                   )}
                 </button>
