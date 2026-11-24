@@ -23,17 +23,20 @@ public class ScanRunner {
     private final WebsiteRepository websiteRepository;
     private final PassiveScannerService passiveScanner;
     private final ActiveScannerService activeScanner;
+    private final com.websentinel.notification.service.NotificationService notificationService;
 
     public ScanRunner(ScanRepository scanRepository,
                       ScanFindingRepository findingRepository,
                       WebsiteRepository websiteRepository,
                       PassiveScannerService passiveScanner,
-                      ActiveScannerService activeScanner) {
+                      ActiveScannerService activeScanner,
+                      com.websentinel.notification.service.NotificationService notificationService) {
         this.scanRepository = scanRepository;
         this.findingRepository = findingRepository;
         this.websiteRepository = websiteRepository;
         this.passiveScanner = passiveScanner;
         this.activeScanner = activeScanner;
+        this.notificationService = notificationService;
     }
 
     @Async
@@ -55,6 +58,7 @@ public class ScanRunner {
                 drafts.addAll(activeScanner.scan(website));
             }
 
+            List<ScanFinding> savedFindings = new ArrayList<>();
             for (PassiveScannerService.FindingDraft d : drafts) {
                 ScanFinding f = new ScanFinding();
                 f.setOrganizationId(orgId);
@@ -67,12 +71,15 @@ public class ScanRunner {
                 f.setRemediation(d.remediation);
                 f.setStatus("OPEN");
                 f.setDetectedAt(Instant.now());
-                findingRepository.save(f);
+                savedFindings.add(findingRepository.save(f));
             }
 
             scan.setStatus("COMPLETED");
             scan.setCompletedAt(Instant.now());
             scanRepository.save(scan);
+
+            // Dispatch in-app notification & alert
+            notificationService.dispatchScanAlert(website, scan, savedFindings);
         } catch (Exception e) {
             try {
                 Scan scan = scanRepository.findById(scanId).orElse(null);

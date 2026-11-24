@@ -6,6 +6,7 @@ import { Button } from '../ui/button'
 import { Separator } from '../ui/separator'
 import { LayoutDashboard, Globe, Building2, LogOut, Shield, Terminal, Search, ChevronDown, CheckCircle2 } from 'lucide-react'
 import CommandPalette from './CommandPalette'
+import NotificationCenter from './NotificationCenter'
 
 const navItems = [
   { to: '/dashboard', label: 'Command Center', icon: LayoutDashboard },
@@ -174,8 +175,9 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* TELEMETRY BEACON & STATUS */}
-          <div className="flex items-center gap-4">
+          {/* TELEMETRY BEACON & STATUS & NOTIFICATIONS */}
+          <div className="flex items-center gap-3">
+            <NotificationCenter organizationId={organizationId} />
             <div className="flex items-center gap-2 bg-[#112240] border border-border px-3 py-1 rounded-full text-[11px] font-mono text-primary">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
