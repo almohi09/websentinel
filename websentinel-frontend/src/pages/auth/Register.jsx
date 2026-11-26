@@ -9,8 +9,8 @@ import api from '../../lib/api'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
-import { Shield, Lock, Mail, User, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react'
+import { Shield, Lock, Mail, User, ArrowRight, AlertCircle, ShieldCheck, Eye, EyeOff, Radio, Cpu } from 'lucide-react'
+import CyberGridBackground from '../../components/ui/CyberGridBackground'
 
 const schema = z.object({
   fullName: z.string().min(1, 'Operator full name required'),
@@ -24,6 +24,7 @@ export default function Register() {
   const setAuth = useAuthStore((s) => s.setAuth)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -50,50 +51,84 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0A192F] p-4 relative overflow-hidden">
-      {/* Background radial glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#64FFDA]/5 rounded-full blur-[140px] pointer-events-none"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#071324] p-4 relative overflow-hidden font-sans selection:bg-[#64FFDA]/20 selection:text-[#64FFDA]">
+      {/* 21st.dev Style Cyber Grid & Beams */}
+      <CyberGridBackground />
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-md relative z-10"
       >
+        {/* Top Status Pill */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#112240]/80 border border-[#1E2D4A] backdrop-blur-md shadow-lg">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#64FFDA] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#64FFDA]"></span>
+            </span>
+            <span className="text-[10px] font-mono font-semibold tracking-wider text-[#64FFDA] uppercase">
+              NEW OPERATOR ONBOARDING // ENCRYPTED
+            </span>
+          </div>
+        </div>
+
         {/* Brand Header */}
         <div className="text-center mb-6 space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[#112240] border border-[#64FFDA]/40 shadow-[0_0_30px_rgba(100,255,218,0.2)] mb-2">
-            <Shield className="h-7 w-7 text-[#64FFDA]" />
+          <div className="relative inline-flex items-center justify-center mb-2">
+            <div className="absolute -inset-2 bg-[#64FFDA]/20 rounded-2xl blur-md"></div>
+            <div className="relative h-14 w-14 rounded-2xl bg-[#0D1F38] border border-[#64FFDA]/50 shadow-[0_0_25px_rgba(100,255,218,0.25)] flex items-center justify-center">
+              <Shield className="h-7 w-7 text-[#64FFDA]" />
+            </div>
           </div>
+
           <div className="flex items-center justify-center gap-2">
-            <span className="text-xl font-mono font-black tracking-tight text-white">WEB<span className="text-[#64FFDA]">SENTINEL</span></span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#64FFDA]/10 text-[#64FFDA] border border-[#64FFDA]/30">PROVISION</span>
+            <span className="text-2xl font-mono font-black tracking-wider text-white">
+              WEB<span className="text-[#64FFDA]">SENTINEL</span>
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#64FFDA]/10 text-[#64FFDA] border border-[#64FFDA]/30 font-bold">
+              PROVISION
+            </span>
           </div>
           <p className="text-xs text-[#8892B0] font-mono">
-            Create an Operator Fleet Account
+            Provision Segregated Multi-Tenant Defense Organization
           </p>
         </div>
 
-        <Card className="bg-[#112240] border-[#1E2D4A] shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
-          <CardHeader className="space-y-1 pb-4 border-b border-[#1E2D4A]/60">
-            <CardTitle className="text-lg font-mono font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-[#64FFDA]" /> Provision Security Credentials
-            </CardTitle>
-            <CardDescription className="text-xs text-[#8892B0] font-mono">
-              Initialize your security posture workspace with automatic tenant segregation.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-5">
+        {/* 21st.dev Style Glowing Card Box */}
+        <div className="relative group">
+          {/* Ambient Glow Aura */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-[#64FFDA]/25 via-[#38BDF8]/15 to-[#64FFDA]/25 rounded-2xl blur-lg opacity-40 group-hover:opacity-75 transition-opacity duration-700 pointer-events-none" />
+
+          {/* Card Surface */}
+          <div className="relative rounded-2xl bg-[#0D1F38]/95 backdrop-blur-xl border border-[#1E2D4A] p-6 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.6)] space-y-5">
+            {/* Inner Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#1E2D4A]/70">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[#64FFDA]" />
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+                  Provision Security Profile
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-[#8892B0] flex items-center gap-1">
+                <Cpu className="h-3 w-3 text-[#64FFDA]" /> v2.4
+              </span>
+            </div>
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Operator Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="fullName" className="text-xs font-mono uppercase text-[#8892B0]">Operator Name</Label>
+                <Label htmlFor="fullName" className="text-xs font-mono uppercase text-[#8892B0] tracking-wider">
+                  Operator Full Name
+                </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-[#8892B0]" />
                   <Input
                     id="fullName"
                     placeholder="Chief Security Officer"
                     {...register('fullName')}
-                    className="pl-9 bg-[#0A192F] border-[#1E2D4A] text-white font-mono text-sm focus-visible:ring-[#64FFDA]"
+                    className="pl-9 bg-[#071324] border-[#1E2D4A] hover:border-[#64FFDA]/40 text-white font-mono text-xs h-10 focus-visible:ring-1 focus-visible:ring-[#64FFDA] focus-visible:border-[#64FFDA] transition-all"
                   />
                 </div>
                 {errors.fullName && (
@@ -103,8 +138,11 @@ export default function Register() {
                 )}
               </div>
 
+              {/* Work Email */}
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-mono uppercase text-[#8892B0]">Work Email</Label>
+                <Label htmlFor="email" className="text-xs font-mono uppercase text-[#8892B0] tracking-wider">
+                  Work Email Address
+                </Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-[#8892B0]" />
                   <Input
@@ -112,7 +150,7 @@ export default function Register() {
                     type="email"
                     placeholder="operator@company.com"
                     {...register('email')}
-                    className="pl-9 bg-[#0A192F] border-[#1E2D4A] text-white font-mono text-sm focus-visible:ring-[#64FFDA]"
+                    className="pl-9 bg-[#071324] border-[#1E2D4A] hover:border-[#64FFDA]/40 text-white font-mono text-xs h-10 focus-visible:ring-1 focus-visible:ring-[#64FFDA] focus-visible:border-[#64FFDA] transition-all"
                   />
                 </div>
                 {errors.email && (
@@ -122,17 +160,28 @@ export default function Register() {
                 )}
               </div>
 
+              {/* Master Password */}
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-xs font-mono uppercase text-[#8892B0]">Master Password</Label>
+                <Label htmlFor="password" className="text-xs font-mono uppercase text-[#8892B0] tracking-wider">
+                  Master Defense Password
+                </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-[#8892B0]" />
                   <Input
                     id="password"
-                    type="password"
-                    placeholder="Min 8 chars with symbols"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Min 8 characters"
                     {...register('password')}
-                    className="pl-9 bg-[#0A192F] border-[#1E2D4A] text-white font-mono text-sm focus-visible:ring-[#64FFDA]"
+                    className="pl-9 pr-10 bg-[#071324] border-[#1E2D4A] hover:border-[#64FFDA]/40 text-white font-mono text-xs h-10 focus-visible:ring-1 focus-visible:ring-[#64FFDA] focus-visible:border-[#64FFDA] transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-3 text-[#8892B0] hover:text-[#64FFDA] transition-colors p-0.5"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-xs font-mono text-[#FF3366] flex items-center gap-1 mt-1">
@@ -141,6 +190,7 @@ export default function Register() {
                 )}
               </div>
 
+              {/* Error Callout */}
               {error && (
                 <div className="p-3 rounded-lg bg-[#FF3366]/10 border border-[#FF3366]/30 text-xs font-mono text-[#FF3366] flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />
@@ -148,27 +198,42 @@ export default function Register() {
                 </div>
               )}
 
-              <Button
+              {/* Magic UI Shimmer Style Button */}
+              <button
                 type="submit"
-                className="w-full bg-[#64FFDA] text-[#0A192F] hover:bg-[#64FFDA]/90 font-mono text-xs font-bold uppercase tracking-wider h-10 shadow-[0_0_20px_rgba(100,255,218,0.2)]"
                 disabled={loading}
+                className="w-full relative group overflow-hidden rounded-lg bg-[#64FFDA] hover:bg-[#64FFDA]/95 text-[#071324] font-mono text-xs font-bold uppercase tracking-widest h-10 shadow-[0_0_20px_rgba(100,255,218,0.25)] hover:shadow-[0_0_30px_rgba(100,255,218,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {loading ? 'Initializing Workspace...' : 'Initialize Organization & Account'}
-              </Button>
+                <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-in-out" />
+                <span>{loading ? 'Initializing Fleet Account...' : 'Initialize Organization & Account'}</span>
+                {!loading && <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />}
+              </button>
             </form>
 
-            <div className="mt-5 pt-4 border-t border-[#1E2D4A] flex items-center justify-between text-xs font-mono text-[#8892B0]">
-              <span>Already registered?</span>
-              <Link to="/login" className="text-[#64FFDA] hover:underline flex items-center gap-1 font-semibold">
+            {/* Bottom Login Switcher */}
+            <div className="pt-3 border-t border-[#1E2D4A]/70 flex items-center justify-between text-xs font-mono text-[#8892B0]">
+              <span>Already an operator?</span>
+              <Link
+                to="/login"
+                className="text-[#64FFDA] hover:underline flex items-center gap-1 font-semibold transition-colors"
+              >
                 Sign In to Console <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Security attestation banner */}
-        <div className="text-center mt-6 text-[11px] font-mono text-[#8892B0]/70 space-y-1">
-          <div>TLS 1.3 End-to-End • Multi-Tenant Isolation • Zero-Trust Perimeter</div>
+        {/* Security Attestation Badges */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono text-[#8892B0]">
+          <span className="px-2 py-0.5 rounded bg-[#112240] border border-[#1E2D4A] flex items-center gap-1">
+            <Lock className="h-2.5 w-2.5 text-[#64FFDA]" /> TLS 1.3
+          </span>
+          <span className="px-2 py-0.5 rounded bg-[#112240] border border-[#1E2D4A] flex items-center gap-1">
+            <Shield className="h-2.5 w-2.5 text-[#38BDF8]" /> ZERO-TRUST
+          </span>
+          <span className="px-2 py-0.5 rounded bg-[#112240] border border-[#1E2D4A] flex items-center gap-1">
+            <Radio className="h-2.5 w-2.5 text-[#64FFDA]" /> CONTINUOUS MONITORING
+          </span>
         </div>
       </motion.div>
     </div>
